@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Documents</title>
+
+    <style>
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 40px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .doc {
+            background: #fff;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .doc:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+
+        .doc-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .doc-icon {
+            font-size: 20px;
+        }
+
+        .hint {
+            text-align: center;
+            margin-top: 20px;
+            color: #777;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>📂 Select a Document</h2>
+
+<div class="container">
+    <div class="doc" onclick="openDoc('doc1')">
+        <span class="doc-title">Project Plan</span>
+        <span class="doc-icon">📄</span>
+    </div>
+
+    <div class="doc" onclick="openDoc('doc2')">
+        <span class="doc-title">Meeting Notes</span>
+        <span class="doc-icon">📝</span>
+    </div>
+
+    <div class="doc" onclick="openDoc('doc3')">
+        <span class="doc-title">Design Spec</span>
+        <span class="doc-icon">📐</span>
+    </div>
+</div>
+
+<p class="hint">Click a document to start collaborating in real time</p>
+
+<script>
+    function openDoc(docId) {
+        window.location.href = `editor.html?docId=${docId}`;
+    }
+</script>
+
+</body>
+</html>
