@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Doc</title>
+
+    <!-- WebSocket libs -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f4f6f8;
+        }
+
+        /* Header */
+        .header {
+            background: #ffffff;
+            padding: 14px 24px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .status {
+            font-size: 13px;
+            color: #4caf50;
+            font-weight: 500;
+        }
+
+        /* Editor container */
+        .editor-wrapper {
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .editor-container {
+            background: #ffffff;
+            width: 800px;
+            min-height: 500px;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        /* Editor */
+        #editor {
+            min-height: 400px;
+            outline: none;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        #editor:empty::before {
+            content: "Start typing your document...";
+            color: #aaa;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            font-size: 13px;
+            color: #777;
+            padding: 10px 0 20px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+    <h2>📄 Collaborative Editor</h2>
+    <span class="status">● Live</span>
+</div>
+
+<!-- Editor -->
+<div class="editor-wrapper">
+    <div class="editor-container">
+        <div id="editor" contenteditable="true"></div>
+    </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+    Real-time editing powered by WebSocket & STOMP
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
