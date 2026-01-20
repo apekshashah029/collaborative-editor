@@ -1,6 +1,7 @@
 package com.example.websocket.security;
 
-import jakarta.servlet.ServletException;
+import com.example.websocket.util.CookieUtil;
+import com.example.websocket.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -16,42 +17,47 @@ import java.io.IOException;
 @Component
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
+    private final JwtUtil jwtUtil;
+
+    public OAuth2LoginSuccessHandler(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
+
     @Override
     public void onAuthenticationSuccess(
             HttpServletRequest request,
             HttpServletResponse response,
             Authentication authentication
-    ) throws IOException, ServletException {
+    ) throws IOException {
 
-        OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
+        OAuth2AuthenticationToken oauthToken =
+                (OAuth2AuthenticationToken) authentication;
 
-        String provider = oauthToken.getAuthorizedClientRegistrationId(); // either google or github
+        String provider = oauthToken.getAuthorizedClientRegistrationId();
         OAuth2User oauthUser = oauthToken.getPrincipal();
 
         log.info("OAuth2 login successful via {}", provider);
 
-        if ("google".equals(provider)) {
-            handleGoogleLogin(oauthUser);
-        } else if ("github".equals(provider)) {
-            handleGithubLogin(oauthUser);
-        }
+        String username = extractUsername(provider, oauthUser);
+
+        String jwt = jwtUtil.generateAccessToken(username);
+        CookieUtil.addAccessTokenCookie(response, jwt);
+
+        log.info(jwt);
 
         response.sendRedirect("/index.html");
     }
 
-    private void handleGoogleLogin(OAuth2User user) {
-        String email = user.getAttribute("email");
-        String name = user.getAttribute("name");
-        String googleId = user.getAttribute("sub");
+    private String extractUsername(String provider, OAuth2User user) {
 
-        log.info("Google user -> email={}, name={}, id={}", email, name, googleId);
-    }
+        if ("google".equals(provider)) {
+            return user.getAttribute("name");
+        }
 
-    private void handleGithubLogin(OAuth2User user) {
-        String username = user.getAttribute("login");
-        String email = user.getAttribute("email"); // may be null if github haven't  attached email
-        Integer githubId = user.getAttribute("id");
+        if ("github".equals(provider)) {
+            return user.getAttribute("login");
+        }
 
-        log.info("GitHub user -> username={}, email={}, id={}", username, email, githubId);
+        throw new IllegalArgumentException("Unsupported provider");
     }
 }
