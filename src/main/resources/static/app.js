@@ -73,6 +73,11 @@ function connect() {
 
         });
 
+         stompClient.subscribe('/topic/errors', (message) => {
+                const error = JSON.parse(message.body);
+                alert(error.message);
+         });
+
         stompClient.send(`/app/typing/${docId}`, {}, "");
 
 

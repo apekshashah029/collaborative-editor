@@ -2,11 +2,13 @@ package com.example.websocket.service;
 
 import com.example.websocket.dto.UserRequestDTO;
 import com.example.websocket.dto.UserResponseDTO;
+import com.example.websocket.entity.Role;
 import com.example.websocket.entity.User;
 import com.example.websocket.exception.UserRegistrationException;
 import com.example.websocket.exception.UsernameAlreadyExistsException;
 import com.example.websocket.mapper.UserMapper;
 import com.example.websocket.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class CustomUserDetailService implements UserDetailsService {
 
@@ -40,7 +43,11 @@ public class CustomUserDetailService implements UserDetailsService {
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
-                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+                List.of(
+                        new SimpleGrantedAuthority(
+                                "ROLE_" + user.getRole().name()
+                        )
+                )
         );
     }
 
@@ -52,8 +59,8 @@ public class CustomUserDetailService implements UserDetailsService {
 
         try{
             User user = userMapper.toEntity(userDTO);
+            user.setRole(Role.USER);
             user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-
             User savedUser = userRepo.save(user);
 
             return userMapper.toResponse(savedUser);
