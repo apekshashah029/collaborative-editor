@@ -1,6 +1,7 @@
 package com.example.websocket.filter;
 
 import com.example.websocket.dto.ErrorResponse;
+import com.example.websocket.exception.JwtInvalidTokenException;
 import com.example.websocket.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -63,17 +64,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    private boolean failAuth(HttpServletResponse response, String message)
+            throws IOException {
+
+        SecurityContextHolder.clearContext();
+        sendUnauthorizedResponse(response, message);
+        return false;
+    }
+
+
     private boolean authenticate(String token,
                                  HttpServletRequest request,
                                  HttpServletResponse response) throws IOException {
 
         try {
             jwtUtil.validateToken(token);
-            String username = jwtUtil.extractUsername(token);
 
-            if (username == null) {
-                sendUnauthorizedResponse(response, "JWT does not contain username");
-                return false;
+            String username = jwtUtil.extractUsername(token);
+            if (username == null || username.isBlank()) {
+                return failAuth(response, "JWT does not contain username");
             }
 
             UserDetails userDetails =
@@ -82,17 +91,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             UsernamePasswordAuthenticationToken authentication =
                     buildAuthentication(userDetails, request);
 
-            SecurityContextHolder.getContext()
-                    .setAuthentication(authentication);
-
+            SecurityContextHolder.getContext().setAuthentication(authentication);
             return true;
 
+        } catch (io.jsonwebtoken.ExpiredJwtException ex) {
+            return failAuth(response, "JWT token has expired");
+        } catch (JwtInvalidTokenException ex) {
+            return failAuth(response, "Invalid JWT token");
         } catch (Exception ex) {
-            SecurityContextHolder.clearContext();
-            sendUnauthorizedResponse(response, "Authentication failed");
-            return false;
+            return failAuth(response, "Authentication failed");
         }
     }
+
+
 
     private UsernamePasswordAuthenticationToken buildAuthentication(
             UserDetails userDetails,
