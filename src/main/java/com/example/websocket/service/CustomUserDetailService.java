@@ -5,6 +5,7 @@ import com.example.websocket.dto.UserResponseDTO;
 import com.example.websocket.entity.User;
 import com.example.websocket.exception.UserRegistrationException;
 import com.example.websocket.exception.UsernameAlreadyExistsException;
+import com.example.websocket.mapper.UserMapper;
 import com.example.websocket.repository.UserRepository;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,10 +23,12 @@ public class CustomUserDetailService implements UserDetailsService {
 
     private final UserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
-    public CustomUserDetailService(UserRepository userRepo, PasswordEncoder passwordEncoder){
+    public CustomUserDetailService(UserRepository userRepo, PasswordEncoder passwordEncoder, UserMapper userMapper){
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -48,15 +51,12 @@ public class CustomUserDetailService implements UserDetailsService {
         }
 
         try{
-            User user = new User();
-            user.setUid(UUID.randomUUID());
-            user.setUsername(userDTO.getUsername());
+            User user = userMapper.toEntity(userDTO);
             user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 
             User savedUser = userRepo.save(user);
-            UserResponseDTO response = new UserResponseDTO(savedUser.getUsername());
 
-            return response;
+            return userMapper.toResponse(savedUser);
         }catch (Exception e){
             throw new UserRegistrationException("Failed to register user");
         }
