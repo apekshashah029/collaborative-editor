@@ -31,6 +31,9 @@ public class TypingController {
             return documentService.getContent(docId);
         }
 
+        // PBAC + RBAC
+        // User -> can view document
+        // Admin -> can edit document
         boolean isAdmin = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch(role -> role.equals("ROLE_ADMIN"));
