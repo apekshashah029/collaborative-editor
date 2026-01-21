@@ -1,26 +1,33 @@
 package com.example.websocket.security;
 
+import com.example.websocket.dto.UserRequestDTO;
+import com.example.websocket.service.CustomUserDetailService;
 import com.example.websocket.util.CookieUtil;
 import com.example.websocket.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Slf4j
 @Component
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtUtil jwtUtil;
+    private final CustomUserDetailService customUserDetailService;
 
-    public OAuth2LoginSuccessHandler(JwtUtil jwtUtil) {
+    public OAuth2LoginSuccessHandler(JwtUtil jwtUtil, CustomUserDetailService customUserDetailService) {
         this.jwtUtil = jwtUtil;
+        this.customUserDetailService = customUserDetailService;
     }
 
     @Override
@@ -44,6 +51,19 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         CookieUtil.addAccessTokenCookie(response, jwt);
 
         log.info(jwt);
+
+        try {
+            customUserDetailService.loadUserByUsername(username);
+            log.info("User already exists with username: {}", username);
+
+        } catch (UsernameNotFoundException ex) {
+
+            UserRequestDTO userRequestDTO =
+                    new UserRequestDTO(username, UUID.randomUUID().toString());
+
+            customUserDetailService.doSignUp(userRequestDTO);
+            log.info("New user registered with username: {}", username);
+        }
 
         response.sendRedirect("/index.html");
     }

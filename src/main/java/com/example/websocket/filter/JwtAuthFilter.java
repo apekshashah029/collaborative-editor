@@ -59,17 +59,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private void authenticate(String token, HttpServletRequest request) {
         try {
             String username = jwtUtil.extractUsername(token);
-            //  will check in database and not done signup
-//            UserDetails userDetails =
-//                    userDetailsService.loadUserByUsername(username);
-
             UserDetails userDetails =
-                    org.springframework.security.core.userdetails.User
-                            .withUsername(username)
-                            .password("")          // not used
-                            .authorities("ROLE_USER") // or from token
-                            .build();
-
+                    userDetailsService.loadUserByUsername(username);
 
             UsernamePasswordAuthenticationToken authentication =
                     buildAuthentication(userDetails, request);
