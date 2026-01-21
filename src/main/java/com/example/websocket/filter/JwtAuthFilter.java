@@ -1,13 +1,12 @@
 package com.example.websocket.filter;
 
-import com.example.websocket.entity.User;
+import com.example.websocket.dto.ErrorResponse;
 import com.example.websocket.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.boot.webmvc.autoconfigure.WebMvcProperties;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,19 +14,23 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
+    private final ObjectMapper objectMapper;
 
     public JwtAuthFilter(JwtUtil jwtUtil,
-                         UserDetailsService userDetailsService) {
+                         UserDetailsService userDetailsService,ObjectMapper objectMapper) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -44,10 +47,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 if ("access_token".equals(cookie.getName())) {
 
                     String token = cookie.getValue();
-                    if (token == null || !jwtUtil.validateToken(token)) {
-                        break;
+                    if (token == null) {
+                        sendUnauthorizedResponse(response, "Invalid or expired JWT token");
+                        return;
                     }
-                    authenticate(token,request);
+                    if (!authenticate(token, request, response)) {
+                        return;
+                    }
+
                     break;
                 }
             }
@@ -56,9 +63,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private void authenticate(String token, HttpServletRequest request) {
+    private boolean authenticate(String token,
+                                 HttpServletRequest request,
+                                 HttpServletResponse response) throws IOException {
+
         try {
+            jwtUtil.validateToken(token);
             String username = jwtUtil.extractUsername(token);
+
+            if (username == null) {
+                sendUnauthorizedResponse(response, "JWT does not contain username");
+                return false;
+            }
+
             UserDetails userDetails =
                     userDetailsService.loadUserByUsername(username);
 
@@ -68,8 +85,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext()
                     .setAuthentication(authentication);
 
+            return true;
+
         } catch (Exception ex) {
             SecurityContextHolder.clearContext();
+            sendUnauthorizedResponse(response, "Authentication failed");
+            return false;
         }
     }
 
@@ -91,5 +112,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         return authentication;
     }
-}
 
+    private void sendUnauthorizedResponse(HttpServletResponse response,
+                                          String message) throws IOException {
+
+            ErrorResponse errorResponse = new ErrorResponse(
+                    HttpServletResponse.SC_UNAUTHORIZED,
+                    message,
+                    LocalDateTime.now()
+            );
+
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+
+            response.getWriter()
+                    .write(objectMapper.writeValueAsString(errorResponse));
+
+    }
+}
