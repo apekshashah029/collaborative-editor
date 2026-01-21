@@ -5,6 +5,7 @@ import com.example.websocket.security.OAuth2LoginSuccessHandler;
 import com.example.websocket.service.CustomUserDetailService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -24,7 +25,7 @@ public class SecurityConfig {
 
     private final OAuth2LoginSuccessHandler successHandler;
 
-    public SecurityConfig(OAuth2LoginSuccessHandler successHandler) {
+    public SecurityConfig(@Lazy OAuth2LoginSuccessHandler successHandler) {
         this.successHandler = successHandler;
     }
 
