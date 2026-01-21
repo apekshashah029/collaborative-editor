@@ -1,6 +1,7 @@
 package com.example.websocket.util;
 
 
+import com.example.websocket.exception.JwtInvalidTokenException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -29,25 +30,28 @@ public class JwtUtil {
     }
 
 
-    public boolean validateToken(String token) {
+    public void validateToken(String token) {
         try {
             Jwts.parserBuilder()
                     .setSigningKey(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()))
                     .build()
                     .parseClaimsJws(token);
-            return true;
         } catch (JwtException | IllegalArgumentException e) {
-            return false;
+            throw new JwtInvalidTokenException("Invalid or expired JWT token");
         }
     }
 
     public String extractUsername(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(SECRET_KEY.getBytes())
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(SECRET_KEY.getBytes())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getSubject();
+        }catch (JwtException | IllegalArgumentException e){
+            throw new JwtInvalidTokenException("Failed to extract username from JWT");
+        }
     }
 }
 

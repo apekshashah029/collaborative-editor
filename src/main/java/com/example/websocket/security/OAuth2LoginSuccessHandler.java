@@ -1,6 +1,8 @@
 package com.example.websocket.security;
 
 import com.example.websocket.dto.UserRequestDTO;
+import com.example.websocket.exception.OAuthUserNotFoundException;
+import com.example.websocket.exception.UnsupportedOAuthProviderException;
 import com.example.websocket.service.CustomUserDetailService;
 import com.example.websocket.util.CookieUtil;
 import com.example.websocket.util.JwtUtil;
@@ -56,7 +58,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             customUserDetailService.loadUserByUsername(username);
             log.info("User already exists with username: {}", username);
 
-        } catch (UsernameNotFoundException ex) {
+        } catch (OAuthUserNotFoundException ex){
 
             UserRequestDTO userRequestDTO =
                     new UserRequestDTO(username, UUID.randomUUID().toString());
@@ -78,6 +80,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             return user.getAttribute("login");
         }
 
-        throw new IllegalArgumentException("Unsupported provider");
+        throw new UnsupportedOAuthProviderException(
+                "OAuth provider not supported: " + provider
+        );
     }
 }
