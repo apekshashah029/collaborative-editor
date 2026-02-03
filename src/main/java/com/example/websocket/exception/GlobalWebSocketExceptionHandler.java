@@ -10,10 +10,10 @@ import java.time.LocalDateTime;
 @ControllerAdvice
 public class GlobalWebSocketExceptionHandler {
 
-    @MessageExceptionHandler(DocumentEditNotAllowedException.class)
+    @MessageExceptionHandler(ForbiddenException.class)
     @SendTo("/topic/errors")
     public ErrorResponse handleEditNotAllowed(
-            DocumentEditNotAllowedException ex) {
+            ForbiddenException ex) {
 
         return new ErrorResponse(
                 403,
