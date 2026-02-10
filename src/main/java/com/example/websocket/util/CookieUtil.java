@@ -2,27 +2,32 @@ package com.example.websocket.util;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import com.example.websocket.config.CookieConfig;
+import org.springframework.stereotype.Component;
 
+
+@Component
 public class CookieUtil {
 
-    public static void addAccessTokenCookie(
-            HttpServletResponse res, String token) {
+    private final CookieConfig config;
 
-        Cookie cookie = new Cookie("access_token", token);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(15 * 60);
+    public CookieUtil(CookieConfig config) {
+        this.config = config;
+    }
 
+    public void addAccessTokenCookie(HttpServletResponse res, String token) {
+        Cookie cookie = new Cookie(config.name, token);
+        cookie.setHttpOnly(config.httpOnly);
+        cookie.setSecure(config.secure);
+        cookie.setPath(config.path);
+        cookie.setMaxAge(config.maxAge);
         res.addCookie(cookie);
     }
 
-
-    public static void clearAuthCookies(HttpServletResponse res) {
-        Cookie access = new Cookie("access_token", null);
+    public void clearAuthCookies(HttpServletResponse res) {
+        Cookie access = new Cookie(config.name, null);
         access.setMaxAge(0);
-        access.setPath("/");
-
+        access.setPath(config.path);
         res.addCookie(access);
     }
 }

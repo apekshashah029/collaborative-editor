@@ -7,6 +7,7 @@ import com.example.websocket.util.CookieUtil;
 import com.example.websocket.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,15 +21,13 @@ import java.util.UUID;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtUtil jwtUtil;
-    private final CustomUserDetailService customUserDetailService;
 
-    public OAuth2LoginSuccessHandler(JwtUtil jwtUtil, CustomUserDetailService customUserDetailService) {
-        this.jwtUtil = jwtUtil;
-        this.customUserDetailService = customUserDetailService;
-    }
+    private final CookieUtil cookieUtil;
+    private final CustomUserDetailService customUserDetailService;
 
     @Override
     public void onAuthenticationSuccess(
@@ -48,9 +47,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String username = extractUsername(provider, oauthUser);
 
         String jwt = jwtUtil.generateAccessToken(username);
-        CookieUtil.addAccessTokenCookie(response, jwt);
-
-        log.info(jwt);
+        cookieUtil.addAccessTokenCookie(response, jwt);
 
         try {
             customUserDetailService.loadUserByUsername(username);
