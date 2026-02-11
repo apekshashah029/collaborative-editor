@@ -2,12 +2,14 @@ package com.example.websocket.service;
 
 import com.example.websocket.dto.UserRequestDTO;
 import com.example.websocket.dto.UserResponseDTO;
+import com.example.websocket.entity.RefreshToken;
 import com.example.websocket.entity.Role;
 import com.example.websocket.entity.User;
 import com.example.websocket.exception.UserRegistrationException;
 import com.example.websocket.exception.UsernameAlreadyExistsException;
 import com.example.websocket.mapper.UserMapper;
 import com.example.websocket.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,22 +19,18 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class CustomUserDetailService implements UserDetailsService {
 
     private final UserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
-
-    public CustomUserDetailService(UserRepository userRepo, PasswordEncoder passwordEncoder, UserMapper userMapper){
-        this.userRepo = userRepo;
-        this.passwordEncoder = passwordEncoder;
-        this.userMapper = userMapper;
-    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -52,7 +50,7 @@ public class CustomUserDetailService implements UserDetailsService {
     }
 
     @Transactional
-    public UserResponseDTO doSignUp(UserRequestDTO userDTO){
+    public UserResponseDTO doSignUp(UserRequestDTO userDTO,String refreshToken){
         if (userRepo.findByUsername(userDTO.getUsername()).isPresent()) {
             throw new UsernameAlreadyExistsException("Username already exists");
         }
@@ -61,6 +59,7 @@ public class CustomUserDetailService implements UserDetailsService {
             User user = userMapper.toEntity(userDTO);
             user.setRole(Role.USER);
             user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+            user.setRefresh_token(refreshToken);
             User savedUser = userRepo.save(user);
 
             return userMapper.toResponse(savedUser);

@@ -16,21 +16,24 @@ import java.util.UUID;
 public class JwtUtil {
 
     private final SecretKey signingKey;
-    private final long expiration;
+    private final long accessTokenExpiration;
+    private final long refreshTokenExpiration;
 
     public JwtUtil(
             @Value("${jwt.secret}") String secretKey,
-            @Value("${jwt.access-token.expiration}") long expiration
+            @Value("${jwt.access-token.expiration}") long accessTokenExpiration,
+            @Value("${jwt.refresh-token.expiration}") long refreshTokenExpiration
     ) {
         this.signingKey = Keys.hmacShaKeyFor(secretKey.getBytes());
-        this.expiration = expiration;
+        this.accessTokenExpiration = accessTokenExpiration;
+        this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
     public String generateAccessToken(String username) {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .setId(UUID.randomUUID().toString())
                 .signWith(signingKey, SignatureAlgorithm.HS256)
                 .compact();
@@ -58,5 +61,15 @@ public class JwtUtil {
         } catch (JwtException | IllegalArgumentException e) {
             throw new JwtInvalidTokenException("Failed to extract username from JWT");
         }
+    }
+
+    public String generateRefreshToken(String username) {
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
+                .setId(UUID.randomUUID().toString())
+                .signWith(signingKey, SignatureAlgorithm.HS256)
+                .compact();
     }
 }

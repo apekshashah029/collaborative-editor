@@ -1,23 +1,34 @@
 package com.example.websocket.config;
 
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
+@Getter
 public class CookieConfig {
 
     @Value("${cookie.access.name}")
-    public String name;
+    private String accessName;
 
     @Value("${cookie.access.http-only}")
-    public boolean httpOnly;
+    private boolean httpOnly;
 
     @Value("${cookie.access.secure}")
-    public boolean secure;
+    private boolean secure;
 
     @Value("${cookie.access.path}")
-    public String path;
+    private String accessPath;
 
     @Value("${cookie.access.max-age}")
-    public int maxAge;
+    private int accessMaxAge;
+
+    @Value("${cookie.refresh.name}")
+    private String refreshName;
+
+    @Value("${cookie.refresh.path}")
+    private String refreshPath;
+
+    @Value("${cookie.refresh.max-age}")
+    private int refreshMaxAge;
 }

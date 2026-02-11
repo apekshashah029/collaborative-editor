@@ -3,6 +3,7 @@ package com.example.websocket.security;
 import com.example.websocket.dto.UserRequestDTO;
 import com.example.websocket.exception.UnsupportedOAuthProviderException;
 import com.example.websocket.service.CustomUserDetailService;
+import com.example.websocket.service.RefreshTokenService;
 import com.example.websocket.util.CookieUtil;
 import com.example.websocket.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +29,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final CookieUtil cookieUtil;
     private final CustomUserDetailService customUserDetailService;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     public void onAuthenticationSuccess(
@@ -47,7 +49,12 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String username = extractUsername(provider, oauthUser);
 
         String jwt = jwtUtil.generateAccessToken(username);
+        String refreshToken = jwtUtil.generateRefreshToken(username);
+
+        refreshTokenService.saveRefreshToken(refreshToken,username);
+
         cookieUtil.addAccessTokenCookie(response, jwt);
+        cookieUtil.addRefreshTokenCookie(response,refreshToken);
 
         try {
             customUserDetailService.loadUserByUsername(username);
@@ -58,7 +65,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             UserRequestDTO userRequestDTO =
                     new UserRequestDTO(username, UUID.randomUUID().toString());
 
-            customUserDetailService.doSignUp(userRequestDTO);
+            customUserDetailService.doSignUp(userRequestDTO,refreshToken);
             log.info("New user registered with username: {}", username);
         }
 
