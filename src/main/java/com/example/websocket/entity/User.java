@@ -1,5 +1,6 @@
 package com.example.websocket.entity;
 
+import com.example.websocket.entity.type.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,6 +22,7 @@ public class User {
 
     private String username;
 
+    @Column(nullable = true)
     private String password;
 
     private String refresh_token;

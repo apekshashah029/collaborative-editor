@@ -1,7 +1,8 @@
 package com.example.websocket.security;
 
-import com.example.websocket.dto.UserRequestDTO;
+import com.example.websocket.dto.LoginRequestDTO;
 import com.example.websocket.exception.UnsupportedOAuthProviderException;
+import com.example.websocket.security.factory.OAuthUsernameExtractorFactory;
 import com.example.websocket.service.CustomUserDetailService;
 import com.example.websocket.service.RefreshTokenService;
 import com.example.websocket.util.CookieUtil;
@@ -30,6 +31,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final CookieUtil cookieUtil;
     private final CustomUserDetailService customUserDetailService;
     private final RefreshTokenService refreshTokenService;
+    private final OAuthUsernameExtractorFactory usernameExtractorFactory;
 
     @Override
     public void onAuthenticationSuccess(
@@ -46,7 +48,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         log.info("OAuth2 login successful via {}", provider);
 
-        String username = extractUsername(provider, oauthUser);
+        String username = usernameExtractorFactory.extractUsername(provider, oauthUser);
 
         String jwt = jwtUtil.generateAccessToken(username);
         String refreshToken = jwtUtil.generateRefreshToken(username);
@@ -62,28 +64,14 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         } catch (UsernameNotFoundException ex){
 
-            UserRequestDTO userRequestDTO =
-                    new UserRequestDTO(username, UUID.randomUUID().toString());
+            LoginRequestDTO loginRequestDTO =
+                    new LoginRequestDTO(username, null);
 
-            customUserDetailService.doSignUp(userRequestDTO,refreshToken);
+            customUserDetailService.doSignUp(loginRequestDTO,refreshToken);
             log.info("New user registered with username: {}", username);
         }
 
         response.sendRedirect("/index.html");
     }
 
-    private String extractUsername(String provider, OAuth2User user) {
-
-        if ("google".equals(provider)) {
-            return user.getAttribute("name");
-        }
-
-        if ("github".equals(provider)) {
-            return user.getAttribute("login");
-        }
-
-        throw new UnsupportedOAuthProviderException(
-                "OAuth provider not supported: " + provider
-        );
-    }
 }

@@ -1,9 +1,7 @@
 package com.example.websocket.service;
 
-import com.example.websocket.dto.UserRequestDTO;
-import com.example.websocket.dto.UserResponseDTO;
-import com.example.websocket.entity.RefreshToken;
-import com.example.websocket.entity.Role;
+import com.example.websocket.dto.LoginRequestDTO;
+import com.example.websocket.entity.type.Role;
 import com.example.websocket.entity.User;
 import com.example.websocket.exception.UserRegistrationException;
 import com.example.websocket.exception.UsernameAlreadyExistsException;
@@ -19,9 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -50,22 +46,31 @@ public class CustomUserDetailService implements UserDetailsService {
     }
 
     @Transactional
-    public UserResponseDTO doSignUp(UserRequestDTO userDTO,String refreshToken){
-        if (userRepo.findByUsername(userDTO.getUsername()).isPresent()) {
+    public void doSignUp(LoginRequestDTO loginDTO, String refreshToken) {
+
+        if (userRepo.findByUsername(loginDTO.getUsername()).isPresent()) {
             throw new UsernameAlreadyExistsException("Username already exists");
         }
 
-        try{
-            User user = userMapper.toEntity(userDTO);
+        try {
+            User user = userMapper.toEntity(loginDTO);
             user.setRole(Role.USER);
-            user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
             user.setRefresh_token(refreshToken);
-            User savedUser = userRepo.save(user);
 
-            return userMapper.toResponse(savedUser);
-        }catch (Exception e){
+            if (loginDTO.getPassword() != null && !loginDTO.getPassword().isBlank()) {
+                // local user
+                user.setPassword(passwordEncoder.encode(loginDTO.getPassword()));
+            } else {
+                // OAuth user
+                user.setPassword(null);
+            }
+
+            User savedUser = userRepo.save(user);
+            userMapper.toResponse(savedUser);
+
+        } catch (Exception e) {
             throw new UserRegistrationException("Failed to register user");
         }
-
     }
+
 }
