@@ -4,7 +4,7 @@ import com.example.websocket.dto.LoginRequestDTO;
 import com.example.websocket.entity.User;
 import org.mapstruct.Mapper;
 
-@Mapper(componentModel = "spring")
+@Mapper(config = IMapper.class)
 public interface UserMapper {
 
     User toEntity(LoginRequestDTO dto);
