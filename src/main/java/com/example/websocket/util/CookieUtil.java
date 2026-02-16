@@ -1,6 +1,7 @@
 package com.example.websocket.util;
 
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.example.websocket.config.CookieConfig;
 import org.springframework.stereotype.Component;
@@ -31,6 +32,28 @@ public class CookieUtil {
         cookie.setPath(config.getRefreshPath());
         cookie.setMaxAge(config.getRefreshMaxAge());
         res.addCookie(cookie);
+    }
+
+    public String extractAccessToken(HttpServletRequest request) {
+        if (request.getCookies() == null) return null;
+
+        for (Cookie cookie : request.getCookies()) {
+            if (cookie.getName().equals(config.getAccessName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
+    }
+
+    public String extractRefreshToken(HttpServletRequest request) {
+        if (request.getCookies() == null) return null;
+
+        for (Cookie cookie : request.getCookies()) {
+            if (cookie.getName().equals(config.getRefreshName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
     public void clearAuthCookies(HttpServletResponse res) {

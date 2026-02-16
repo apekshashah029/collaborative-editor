@@ -21,13 +21,12 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.UUID;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtUtil jwtUtil;
-
     private final CookieUtil cookieUtil;
     private final CustomUserDetailService customUserDetailService;
     private final RefreshTokenService refreshTokenService;
@@ -48,30 +47,35 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         log.info("OAuth2 login successful via {}", provider);
 
-        String username = usernameExtractorFactory.extractUsername(provider, oauthUser);
+        String username =
+                usernameExtractorFactory.extractUsername(provider, oauthUser);
 
-        String jwt = jwtUtil.generateAccessToken(username);
+        ensureUserExists(username);
+
+        String accessToken = jwtUtil.generateAccessToken(username);
         String refreshToken = jwtUtil.generateRefreshToken(username);
 
-        refreshTokenService.saveRefreshToken(refreshToken,username);
+        refreshTokenService.saveRefreshToken(refreshToken, username);
 
-        cookieUtil.addAccessTokenCookie(response, jwt);
-        cookieUtil.addRefreshTokenCookie(response,refreshToken);
-
-        try {
-            customUserDetailService.loadUserByUsername(username);
-            log.info("User already exists with username: {}", username);
-
-        } catch (UsernameNotFoundException ex){
-
-            LoginRequestDTO loginRequestDTO =
-                    new LoginRequestDTO(username, null);
-
-            customUserDetailService.doSignUp(loginRequestDTO,refreshToken);
-            log.info("New user registered with username: {}", username);
-        }
+        cookieUtil.addAccessTokenCookie(response, accessToken);
+        cookieUtil.addRefreshTokenCookie(response, refreshToken);
 
         response.sendRedirect("/index.html");
     }
 
+    private void ensureUserExists(String username) {
+
+        try {
+            customUserDetailService.loadUserByUsername(username);
+            log.info("User already exists: {}", username);
+
+        } catch (UsernameNotFoundException ex) {
+
+            LoginRequestDTO signupRequest =
+                    new LoginRequestDTO(username, null);
+
+            customUserDetailService.doSignUp(signupRequest, null);
+            log.info("New OAuth user registered: {}", username);
+        }
+    }
 }

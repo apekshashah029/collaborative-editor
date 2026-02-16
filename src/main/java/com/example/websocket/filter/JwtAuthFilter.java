@@ -2,6 +2,7 @@ package com.example.websocket.filter;
 
 import com.example.websocket.dto.ErrorResponse;
 import com.example.websocket.exception.JwtInvalidTokenException;
+import com.example.websocket.util.CookieUtil;
 import com.example.websocket.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -13,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -28,6 +30,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
     private final ObjectMapper objectMapper;
+    private final CookieUtil cookieUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -35,38 +38,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        if (SecurityContextHolder.getContext().getAuthentication() == null
-                && request.getCookies() != null) {
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            for (Cookie cookie : request.getCookies()) {
+            String token = cookieUtil.extractAccessToken(request);
 
-                if ("access_token".equals(cookie.getName())) {
-
-                    String token = cookie.getValue();
-                    if (token == null) {
-                        sendUnauthorizedResponse(response, "Invalid or expired JWT token");
-                        return;
-                    }
-                    if (!authenticate(token, request, response)) {
-                        return;
-                    }
-
-                    break;
+            if (token != null) {
+                if (!authenticate(token, request, response)) {
+                    return;
                 }
             }
         }
 
         filterChain.doFilter(request, response);
     }
-
-    private boolean failAuth(HttpServletResponse response, String message)
-            throws IOException {
-
-        SecurityContextHolder.clearContext();
-        sendUnauthorizedResponse(response, message);
-        return false;
-    }
-
 
     private boolean authenticate(String token,
                                  HttpServletRequest request,
@@ -84,13 +68,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     userDetailsService.loadUserByUsername(username);
 
             UsernamePasswordAuthenticationToken authentication =
-                    buildAuthentication(userDetails, request);
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
+
+            authentication.setDetails(
+                    new WebAuthenticationDetailsSource()
+                            .buildDetails(request)
+            );
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
             return true;
 
-        } catch (io.jsonwebtoken.ExpiredJwtException ex) {
-            return failAuth(response, "JWT token has expired");
+        } catch (UsernameNotFoundException ex) {
+            return failAuth(response, "User not found for JWT token");
         } catch (JwtInvalidTokenException ex) {
             return failAuth(response, "Invalid JWT token");
         } catch (Exception ex) {
@@ -98,40 +91,26 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
     }
 
+    private boolean failAuth(HttpServletResponse response, String message)
+            throws IOException {
 
-    private UsernamePasswordAuthenticationToken buildAuthentication(
-            UserDetails userDetails,
-            HttpServletRequest request) {
-
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-
-        authentication.setDetails(
-                new WebAuthenticationDetailsSource()
-                        .buildDetails(request)
-        );
-
-        return authentication;
+        SecurityContextHolder.clearContext();
+        sendUnauthorizedResponse(response, message);
+        return false;
     }
 
     private void sendUnauthorizedResponse(HttpServletResponse response,
                                           String message) throws IOException {
 
-            ErrorResponse errorResponse = new ErrorResponse(
-                    HttpServletResponse.SC_UNAUTHORIZED,
-                    message,
-                    LocalDateTime.now()
-            );
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpServletResponse.SC_UNAUTHORIZED,
+                message,
+                LocalDateTime.now()
+        );
 
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-
-            response.getWriter()
-                    .write(objectMapper.writeValueAsString(errorResponse));
-
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.getWriter()
+                .write(objectMapper.writeValueAsString(errorResponse));
     }
 }

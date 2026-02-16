@@ -51,6 +51,20 @@ public class CustomExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(JwtInvalidTokenException.class)
+    public ResponseEntity<ErrorResponse> handleJwtInvalidToken(
+            JwtInvalidTokenException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponse(
+                        HttpStatus.UNAUTHORIZED.value(),
+                        ex.getMessage(),
+                        LocalDateTime.now()
+                ));
+    }
+
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
 
