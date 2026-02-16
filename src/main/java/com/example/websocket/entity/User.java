@@ -26,8 +26,6 @@ public class User {
     @Column(nullable = true)
     private String password;
 
-    private String refresh_token;
-
     @Enumerated(EnumType.STRING)
     private Role role;
 }

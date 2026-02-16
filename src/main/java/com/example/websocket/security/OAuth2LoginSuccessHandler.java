@@ -74,7 +74,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             LoginRequestDTO signupRequest =
                     new LoginRequestDTO(username, null);
 
-            customUserDetailService.doSignUp(signupRequest, null);
+            customUserDetailService.doSignUp(signupRequest);
             log.info("New OAuth user registered: {}", username);
         }
     }

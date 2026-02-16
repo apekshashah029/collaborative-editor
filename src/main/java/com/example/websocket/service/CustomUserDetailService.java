@@ -46,7 +46,7 @@ public class CustomUserDetailService implements UserDetailsService {
     }
 
     @Transactional
-    public void doSignUp(LoginRequestDTO loginDTO, String refreshToken) {
+    public void doSignUp(LoginRequestDTO loginDTO) {
 
         if (userRepo.findByUsername(loginDTO.getUsername()).isPresent()) {
             throw new UsernameAlreadyExistsException("Username already exists");
@@ -55,7 +55,6 @@ public class CustomUserDetailService implements UserDetailsService {
         try {
             User user = userMapper.toEntity(loginDTO);
             user.setRole(Role.USER);
-            user.setRefresh_token(refreshToken);
 
             if (loginDTO.getPassword() != null && !loginDTO.getPassword().isBlank()) {
                 // local user
@@ -66,8 +65,6 @@ public class CustomUserDetailService implements UserDetailsService {
             }
 
             User savedUser = userRepo.save(user);
-            userMapper.toResponse(savedUser);
-
         } catch (Exception e) {
             throw new UserRegistrationException("Failed to register user");
         }
