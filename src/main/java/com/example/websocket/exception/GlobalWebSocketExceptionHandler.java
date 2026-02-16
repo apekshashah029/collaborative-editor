@@ -1,6 +1,7 @@
 package com.example.websocket.exception;
 
 import com.example.websocket.dto.ErrorResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -28,9 +29,8 @@ public class GlobalWebSocketExceptionHandler {
 
         return new ErrorResponse(
                 500,
-                "Something went wrong",
+                ex.getMessage(),
                 LocalDateTime.now()
         );
     }
 }
-

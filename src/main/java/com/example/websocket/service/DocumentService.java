@@ -1,6 +1,8 @@
 package com.example.websocket.service;
 
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
+@Slf4j
 public class DocumentService {
 
     private final DocumentRepository repository;
@@ -27,9 +30,10 @@ public class DocumentService {
         for (Document doc : repository.findAll()) {
             documentCache.put(doc.getDocId(), doc.getContent());
         }
-        System.out.println("Loaded documents into cache: " + documentCache.size());
+        log.info("Loaded documents into cache: " + documentCache.size());
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @Transactional
     public String saveOrUpdate(String docId, String content) {
 
@@ -49,4 +53,3 @@ public class DocumentService {
         return documentCache.getOrDefault(docId, "");
     }
 }
-

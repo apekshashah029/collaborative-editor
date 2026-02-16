@@ -1,13 +1,15 @@
 package com.example.websocket.controller;
 
-import com.example.websocket.authorization.DocumentAuthorizationService;
+//import com.example.websocket.authorization.DocumentAuthorizationService;
 import com.example.websocket.exception.ForbiddenException;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import com.example.websocket.service.DocumentService;
@@ -17,8 +19,6 @@ import com.example.websocket.service.DocumentService;
 public class TypingController {
 
     private final DocumentService documentService;
-
-    private final DocumentAuthorizationService documentAuthorizationService;
 
     @MessageMapping("/typing/{docId}")
     @SendTo("/topic/typing/{docId}")
@@ -31,16 +31,11 @@ public class TypingController {
             return documentService.getContent(docId);
         }
 
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
         // PBAC + RBAC
         // User -> can view document
         // Admin -> can edit document
-        boolean isAdmin = documentAuthorizationService.checkEditPermission(authentication);
-
-        if (!isAdmin) {
-            throw new ForbiddenException(
-                    "Access denied"
-            );
-        }
 
         return documentService.saveOrUpdate(docId, text);
     }
