@@ -14,7 +14,7 @@ services:
       - "5432:5432"
 
   backend:
-    build: .
+    image: apekshashah029/collaborative-editor:latest
     container_name: websocket-backend
     env_file:
        - .env
